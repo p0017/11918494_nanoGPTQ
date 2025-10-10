@@ -13,6 +13,12 @@
 3. Frantar et al. — *GPTQ: Accurate Post‑Training Quantization for Generative Pre‑trained Transformers* — [ICLR 2023](https://openreview.net/forum?id=tcbBPnfwxS)
 3. Karpathy — *nanoGPT* — [GitHub Repo](https://github.com/karpathy/nanoGPT)
 
+## Motivation
+
+**Problem:** Large models have millions of parameters, consuming significant GPU memory and computational resources for inference, limiting their application in resource-constained settings.
+
+**Solution:** Post-training quantization reduces the number of bits per weight, lowering memory usage and potentially accelerating inference on GPUs that supports low-precision operations, while preserving most of the models performance.
+
 ## Approach
 
 Re-implement a small autoregressive transformer (NanoGPT, ~1–2 M params), train on Tiny Shakespeare, and implement two post‑training integer (int8) weight quantization techniques.
@@ -24,7 +30,7 @@ Both quantized model variants will be compared to the floating‑point baseline 
 
 ## Dataset
 
-**Primary dataset:** Tiny Shakespeare (~1M tokens).
+**Dataset:** Tiny Shakespeare (~1M tokens).
 
 **Preprocessing:** Simple byte/char tokenization and a shuffled train/validation split.
 
