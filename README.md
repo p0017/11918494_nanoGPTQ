@@ -30,15 +30,15 @@ Both quantized model variants will be compared to the floating‑point baseline 
 
 ## Dataset
 
-**Dataset:** Tiny Shakespeare (~1M tokens).
+**Dataset:** Tiny Shakespeare, a corpus of roughly 1 MB (~1 M tokens) of Shakespeare’s text.
 
-**Preprocessing:** Simple byte/char tokenization and a shuffled train/validation split.
+**Preprocessing:** Simple byte/char tokenization and train/validation splitting.
 
 **Error Metric:** Perplexity, where the ground truth is given by the floating‑point baseline model.
 
 ## Demo application
 
-**Form:** A Python web app with Gradio.
+**Form:** A local Python web app with Gradio.
 
 **Features:** Allows the user to select between model variants (floating‑point baseline, naive quantized, Hessian-aware quantized). Displays some generated text and inference latency.
 
