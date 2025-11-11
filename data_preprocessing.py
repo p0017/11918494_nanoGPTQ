@@ -38,18 +38,23 @@ def decode(encoded: list[int]) -> str:
     integer_to_string = {i:char for i, char in enumerate(characters)}
     return ''.join([integer_to_string[i] for i in encoded])
 
-# Split the dataset into training and validation sets
-# Validation set comes after the training set to avoid data leakage
-train_text = text[:int(0.9*len(text))]
-val_text = text[int(0.9*len(text)):]
+# Split the dataset into training, validation and test sets
+# Validation and test sets come after the training set to avoid data leakage
+train_text = text[:int(0.8*len(text))]
+val_text = text[int(0.8*len(text)):int(0.9*len(text))]
+test_text = text[int(0.9*len(text)):]
 train_data = encode(train_text)
 val_data = encode(val_text)
+test_data = encode(test_text)
 
 print(f"Number of tokens in training data: {len(train_data):,}")
 print(f"Number of tokens in validation data: {len(val_data):,}")
+print(f"Number of tokens in test data: {len(test_data):,}")
 
 # Save the encoded datasets as binary files
 train_data = np.array(train_data, dtype=np.uint16)
 val_data = np.array(val_data, dtype=np.uint16)
+test_data = np.array(test_data, dtype=np.uint16)
 train_data.tofile("./data/tinyshakespeare_train.bin")
 val_data.tofile("./data/tinyshakespeare_val.bin")
+test_data.tofile("./data/tinyshakespeare_test.bin")
