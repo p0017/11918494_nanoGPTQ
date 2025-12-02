@@ -192,37 +192,39 @@ class TransformerBlock(nn.Module):
 class GPT(nn.Module):
     """GPT autoregressive language model consisting of token and positional embeddings, multiple Transformer blocks, and a linear mapping head."""
 
-    def __init__(self, config):
+    def __init__(self, model_config):
         super().__init__()
-        assert config.vocabulary_size is not None
-        assert config.context_length is not None
-        self.config = config
+        self.config = model_config
+        # Getting vocabulary size from the vocabulary string set in config
+        self.config.vocabulary_size = len(model_config.vocabulary)
+        assert self.config.vocabulary_size is not None
+        assert self.config.context_length is not None
 
         # Main transformer is a dictionary of modules
         self.transformer = nn.ModuleDict(
             dict(
                 # Converts input tokens to vectors
                 token_embedding=nn.Embedding(
-                    config.vocabulary_size, config.embedding_dimension
+                    self.config.vocabulary_size, self.config.embedding_dimension
                 ),
                 # Adds an unique vector for every position in the input sequence
                 positional_embedding=nn.Embedding(
-                    config.context_length, config.embedding_dimension
+                    self.config.context_length, self.config.embedding_dimension
                 ),
-                dropout=nn.Dropout(config.dropout),
+                dropout=nn.Dropout(self.config.dropout),
                 # Stack of transformer blocks
                 transformer_blocks=nn.ModuleList(
-                    [TransformerBlock(config) for _ in range(config.n_layers)]
+                    [TransformerBlock(self.config) for _ in range(self.config.n_layers)]
                 ),
                 # Final layer norm before output
                 final_layer_norm=LayerNorm(
-                    config.embedding_dimension, bias=config.bias
+                    self.config.embedding_dimension, bias=self.config.bias
                 ),
             )
         )
         # Linear layer for mapping the final embeddings to logits over the vocabulary
         self.linear_mapping_head = nn.Linear(
-            config.embedding_dimension, config.vocabulary_size, bias=False
+            self.config.embedding_dimension, self.config.vocabulary_size, bias=False
         )
         # Weight tying for better generalization and reduced parameters
         self.transformer.token_embedding.weight = self.linear_mapping_head.weight
@@ -231,7 +233,9 @@ class GPT(nn.Module):
         # Apply special initialization to c_projection weights as per GPT-2 paper
         for pn, p in self.named_parameters():
             if pn.endswith("c_projection.weight"):
-                nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * config.n_layers))
+                nn.init.normal_(
+                    p, mean=0.0, std=0.02 / math.sqrt(2 * self.config.n_layers)
+                )
 
         print(f"Number of parameters: %.2fM" % (self.get_number_of_parameters() / 1e6,))
 

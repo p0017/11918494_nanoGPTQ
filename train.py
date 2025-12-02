@@ -4,10 +4,9 @@ import torch
 import time
 import math
 
-from config import GPTConfig
+from config import model_config, train_config
 from model import GPT
 
-config = GPTConfig()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = (
     "bfloat16"
@@ -30,14 +29,15 @@ def get_batch(split: str):
     data = np.fromfile(path, dtype=np.uint16).astype(np.int16)
     # Randomly select starting indices for the batch
     starting_index = torch.randint(
-        len(data) - config.context_length, size=(config.batch_size,)
+        len(data) - model_config.context_length, size=(train_config.batch_size,)
     )
     # For each starting index, extract input sequences of length context_length
     # And the corresponding target sequences shifted by one position
     input = torch.stack(
         [
             torch.tensor(
-                data[i.item() : i.item() + config.context_length], dtype=torch.long
+                data[i.item() : i.item() + model_config.context_length],
+                dtype=torch.long,
             )
             for i in starting_index
         ]
@@ -45,7 +45,7 @@ def get_batch(split: str):
     target = torch.stack(
         [
             torch.tensor(
-                data[i.item() + 1 : i.item() + config.context_length + 1],
+                data[i.item() + 1 : i.item() + model_config.context_length + 1],
                 dtype=torch.long,
             )
             for i in starting_index
@@ -65,14 +65,17 @@ def get_batch(split: str):
 if __name__ == "__main__":
     current_iteration = 0
     best_val_loss = float("inf")
-    best_checkpoint_path = os.path.join("checkpoints", f"{config.name}_best.pt")
+    best_checkpoint_path = os.path.join("checkpoints", f"{train_config.name}_best.pt")
 
     # Either we train from scratch
-    if config.train_from_scratch:
+    if train_config.train_from_scratch:
         print("Training model from scratch...")
-        model = GPT(config)
+        model = GPT(model_config)
         optimizer = model.configure_optimizers(
-            config.weight_decay, config.learning_rate, config.betas, device_type=device
+            train_config.weight_decay,
+            train_config.learning_rate,
+            train_config.betas,
+            device_type=device,
         )
 
     # Or we resume from the best previous checkpoint
@@ -82,15 +85,19 @@ if __name__ == "__main__":
             raise FileNotFoundError(f"No checkpoint found at {best_checkpoint_path}")
 
         checkpoint = torch.load(best_checkpoint_path, map_location=device)
-        config = checkpoint["config"]
+        model_config = checkpoint["model_config"]
+        train_config = checkpoint["train_config"]
 
         current_iteration = checkpoint["iteration"]
         best_val_loss = checkpoint["best_val_loss"]
 
-        model = GPT(config)
+        model = GPT(model_config)
         model.load_state_dict(checkpoint["model"])
         optimizer = model.configure_optimizers(
-            config.weight_decay, config.learning_rate, config.betas, device_type=device
+            train_config.weight_decay,
+            train_config.learning_rate,
+            train_config.betas,
+            device_type=device,
         )
         # Free up memory
         checkpoint = None
@@ -103,8 +110,8 @@ if __name__ == "__main__":
         model.eval()
         for split in ["train", "val"]:
             # Evaluating on iters_per_eval batches
-            losses = torch.zeros(config.iters_per_eval)
-            for k in range(config.iters_per_eval):
+            losses = torch.zeros(train_config.iters_per_eval)
+            for k in range(train_config.iters_per_eval):
                 X, Y = get_batch(split)
                 _, loss = model(X, Y)
                 losses[k] = loss.item()
@@ -115,24 +122,28 @@ if __name__ == "__main__":
 
     def get_learning_rate(iteration: int) -> float:
         # First some warmup
-        if iteration < config.warmup_iters:
-            return config.learning_rate * (iteration + 1) / (config.warmup_iters + 1)
+        if iteration < train_config.warmup_iters:
+            return (
+                train_config.learning_rate
+                * (iteration + 1)
+                / (train_config.warmup_iters + 1)
+            )
 
         # Then cosine decay down to min_learning_rate
         else:
-            decay_ratio = (iteration - config.warmup_iters) / (
-                config.max_iters - config.warmup_iters
+            decay_ratio = (iteration - train_config.warmup_iters) / (
+                train_config.max_iters - train_config.warmup_iters
             )
             coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
-            return config.min_learning_rate + coeff * (
-                config.learning_rate - config.min_learning_rate
+            return train_config.min_learning_rate + coeff * (
+                train_config.learning_rate - train_config.min_learning_rate
             )
 
     print("Starting training loop...")
     X, Y = get_batch("train")
     t0 = time.time()
 
-    while current_iteration <= config.max_iters:
+    while current_iteration <= train_config.max_iters:
 
         # Setting the current learning rate
         lr = get_learning_rate(current_iteration)
@@ -140,19 +151,24 @@ if __name__ == "__main__":
             param_group["lr"] = lr
 
         # Evaluation and checkpointing every eval_interval iterations
-        if current_iteration % config.eval_interval == 0 and current_iteration > 0:
+        if (
+            current_iteration % train_config.eval_interval == 0
+            and current_iteration > 0
+        ):
             # Estimate time remaining
             t1 = time.time()
             dt = t1 - t0
             t0 = t1
-            iters_left = config.max_iters - current_iteration
-            sec_per_iter = dt / config.eval_interval if current_iteration > 0 else 0
+            iters_left = train_config.max_iters - current_iteration
+            sec_per_iter = (
+                dt / train_config.eval_interval if current_iteration > 0 else 0
+            )
             eta_sec = iters_left * sec_per_iter
             eta_str = time.strftime("%H:%M:%S", time.gmtime(eta_sec))
 
             losses = get_loss()
             print(
-                f"step {current_iteration}/{config.max_iters} | "
+                f"step {current_iteration}/{train_config.max_iters} | "
                 f"train loss {losses['train']:.4f} | "
                 f"val loss {losses['val']:.4f} | "
                 f"lr {lr:.2e} | "
@@ -165,7 +181,8 @@ if __name__ == "__main__":
                 checkpoint = {
                     "model": model.state_dict(),
                     "optimizer": optimizer.state_dict(),
-                    "config": config,
+                    "model_config": model_config,
+                    "train_config": train_config,
                     "iteration": current_iteration,
                     "best_val_loss": best_val_loss,
                 }
