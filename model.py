@@ -338,21 +338,10 @@ class GPT(nn.Module):
             {"params": no_weight_decay_parameters, "weight_decay": 0.0},
         ]
 
-        # Checking if fused AdamW optimizer is available
-        # This is a GPU-optimized version of AdamW for faster training and lower memory usage
-        fused_adamw_available = (
-            "fused" in inspect.signature(torch.optim.AdamW).parameters
-            and device_type == "cuda"
-        )
-        extra_arguments = dict(fused=True) if fused_adamw_available else dict()
         optimizer = torch.optim.AdamW(
             optimizer_grouped_parameters,
             lr=learning_rate,
-            betas=betas,
-            **extra_arguments,
-        )
-        print(
-            f"Using {'fused ' if fused_adamw_available else 'non-fused '}AdamW optimizer"
+            betas=betas
         )
 
         return optimizer
