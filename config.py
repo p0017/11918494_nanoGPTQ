@@ -38,10 +38,15 @@ class train_config:
 class sample_config:
     """Configuration for sampling parameters."""
 
-    experiment_name = (
-        "tinyshakespeare_8x384_full_run_highreg"  # Name of the experiment to load the model from
-    )
-    start_prompt = "\n"  # Can be any string, e.g., "To be, or not to be"
+    experiment_name = "tinyshakespeare_8x384_full_run_highreg_quantized_naive"  # Name of the experiment to load the model from
+    start_prompt = "To be, or "  # Can be any string, e.g., "To be, or not to be"
     max_new_tokens = 500  # How many characters to generate
     temperature = 0.8  # 1.0 = standard, < 1.0 = more conservative, > 1.0 = more random
     top_k = 200  # Retain only the top_k most likely tokens (clamp distribution)
+
+
+class quantization_config:
+    """Configuration for quantization parameters."""
+
+    experiment_name = "tinyshakespeare_8x384_full_run_highreg"  # Name of the experiment to load the model from
+    method: str = "naive"  # Quantization method: 'naive' or 'gptq'

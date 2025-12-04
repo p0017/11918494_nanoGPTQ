@@ -3,16 +3,10 @@ import numpy as np
 import torch
 import time
 import math
-
 from config import model_config, train_config
 from model import GPT
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-dtype = (
-    "bfloat16"
-    if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
-    else "float16"
-)
 
 
 def get_batch(split: str):
@@ -65,7 +59,7 @@ def get_batch(split: str):
 if __name__ == "__main__":
     current_iteration = 0
     best_val_loss = float("inf")
-    best_checkpoint_path = os.path.join("checkpoints", f"{train_config.name}_best.pt")
+    best_checkpoint_path = os.path.join("checkpoints", f"{train_config.name}.pt")
 
     # Either we train from scratch
     if train_config.train_from_scratch:
