@@ -49,4 +49,4 @@ class quantization_config:
     """Configuration for quantization parameters."""
 
     experiment_name = "tinyshakespeare_8x384_full_run_highreg"  # Name of the experiment to load the model from
-    method: str = "naive"  # Quantization method: 'naive' or 'gptq'
+    method: str = "gptq"  # Quantization method: 'naive' or 'gptq'
