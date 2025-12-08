@@ -3,16 +3,20 @@ from beartype import beartype
 import torch
 import torch.nn as nn
 from model import GPT
-from config import quantization_config
+from config import quantization_config, validate_quantization_config
 from train import get_batch
 
+validate_quantization_config()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+@beartype
 class QuantizedLinear(torch.nn.Module):
     """A linear layer with quantized weights, replaces nn.Linear in quantized models."""
 
-    def __init__(self, original_linear, weight_int8, scale):
+    def __init__(
+        self, original_linear: nn.Linear, weight_int8: torch.Tensor, scale: torch.Tensor
+    ):
         super().__init__()
         self.in_features = original_linear.in_features
         self.out_features = original_linear.out_features
@@ -26,7 +30,7 @@ class QuantizedLinear(torch.nn.Module):
         else:
             self.register_parameter("bias", None)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Dequantize weights on-the-fly for the forward pass."""
 
         w_dequantized = self.weight.to(x.dtype) * self.scale

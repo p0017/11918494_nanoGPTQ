@@ -1,13 +1,17 @@
 import os
+from beartype import beartype
 import torch
 from model import GPT
 from data_preprocessing import encode, decode
 from quantize import QuantizedLinear
-from config import sample_config, VOCABULARY
+from config import sample_config, validate_sample_config
 import torch.nn as nn
 
+validate_sample_config()
 
-def replace_with_dummy_quantized(module):
+
+@beartype
+def replace_with_dummy_quantized(module: nn.Module):
     """Before loading a quantized model, we need to replace all nn.Linear layers with
     QuantizedLinear layers, such that the state_dict can be loaded correctly."""
 

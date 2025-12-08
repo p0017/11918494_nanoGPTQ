@@ -4,12 +4,16 @@ from beartype import beartype
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from config import validate_model_config
+
+validate_model_config()
 
 
+@beartype
 class LayerNorm(nn.Module):
     """LayerNorm with optional bias. PyTorch's LayerNorm always has bias, this one gives the option to disable it."""
 
-    def __init__(self, ndim, bias=False):
+    def __init__(self, ndim: int, bias: bool = False):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(ndim))
         if bias:
@@ -17,15 +21,16 @@ class LayerNorm(nn.Module):
         else:
             self.bias = None
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return F.layer_norm(x, self.weight.shape, self.weight, self.bias, 1e-5)
 
 
+@beartype
 class CausalSelfAttention(nn.Module):
     """Causal self-attention mechanism with optional flash attention support.
     Attends only to previous tokens and itself (no peeking into the future)."""
 
-    def __init__(self, config):
+    def __init__(self, config: object):
         super().__init__()
         assert config.embedding_dimension % config.n_attention_heads == 0
         # one big linear layer for all three learning query, key, value matrices at once
@@ -61,7 +66,7 @@ class CausalSelfAttention(nn.Module):
             # Registering the mask as a buffer such that its not a learnable parameter
             self.register_buffer("bias", causal_mask)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size, sequence_length, embedding_dimension = x.size()
 
         # Before, we initialized one big linear layer for query, key, value matrices
@@ -147,10 +152,11 @@ class CausalSelfAttention(nn.Module):
         return y
 
 
+@beartype
 class MLP(nn.Module):
     """Feed-forward neural network (multi-layer perceptron, MLP) with GELU activation and dropout."""
 
-    def __init__(self, config):
+    def __init__(self, config: object):
         super().__init__()
         # First linear layer expands the embedding dimension to 4 times its size
         # To let model learn more complex representations
@@ -164,7 +170,7 @@ class MLP(nn.Module):
         )
         self.dropout = nn.Dropout(config.dropout)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.first_linear(x)
         x = self.gelu(x)
         x = self.second_linear(x)
@@ -175,14 +181,14 @@ class MLP(nn.Module):
 class TransformerBlock(nn.Module):
     """A single Transformer block consisting of causal self-attention and MLP with residual connections and layer normalization."""
 
-    def __init__(self, config):
+    def __init__(self, config: object):
         super().__init__()
         self.first_layer_norm = LayerNorm(config.embedding_dimension, bias=config.bias)
         self.attention = CausalSelfAttention(config)
         self.second_layer_norm = LayerNorm(config.embedding_dimension, bias=config.bias)
         self.mlp = MLP(config)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Residual connections around attention and MLP
         x = x + self.attention(self.first_layer_norm(x))
         x = x + self.mlp(self.second_layer_norm(x))
@@ -192,7 +198,7 @@ class TransformerBlock(nn.Module):
 class GPT(nn.Module):
     """GPT autoregressive language model consisting of token and positional embeddings, multiple Transformer blocks, and a linear mapping head."""
 
-    def __init__(self, model_config):
+    def __init__(self, model_config: object):
         super().__init__()
         self.config = model_config
         # Getting vocabulary size from the vocabulary string set in config
@@ -246,7 +252,7 @@ class GPT(nn.Module):
             number_of_parameters -= self.transformer.token_embedding.weight.numel()
         return number_of_parameters
 
-    def _initialize_weights(self, module):
+    def _initialize_weights(self, module: nn.Module):
         """Initialize the weights of linear and embedding layers with a normal distribution."""
         if isinstance(module, nn.Linear):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
@@ -259,7 +265,9 @@ class GPT(nn.Module):
         else:
             pass  # No initialization for other modules
 
-    def forward(self, input_token_indices, targets=None):
+    def forward(
+        self, input_token_indices: torch.Tensor, targets: torch.Tensor = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         device = input_token_indices.device
         batch_size, sequence_length = input_token_indices.size()
 
@@ -303,7 +311,6 @@ class GPT(nn.Module):
 
         return logits, loss
 
-    @beartype
     def crop_context_length(self, context_length: int):
         """Crop the model's context length to a new, smaller value."""
         assert (
@@ -319,9 +326,8 @@ class GPT(nn.Module):
                     :, :, :context_length, :context_length
                 ]
 
-    @beartype
     def configure_optimizers(
-        self, weight_decay: float, learning_rate: float, betas: tuple, device_type: str
+        self, weight_decay: float, learning_rate: float, betas: tuple
     ):
         parameter_dict = {pn: p for pn, p in self.named_parameters()}
         # Filtering out parameters that do not require grad
@@ -339,18 +345,15 @@ class GPT(nn.Module):
         ]
 
         optimizer = torch.optim.AdamW(
-            optimizer_grouped_parameters,
-            lr=learning_rate,
-            betas=betas
+            optimizer_grouped_parameters, lr=learning_rate, betas=betas
         )
 
         return optimizer
 
-    @beartype
     @torch.no_grad()
     def generate(
         self,
-        input_token_indices,
+        input_token_indices: torch.Tensor,
         max_new_tokens: int,
         temperature: float = 1.0,
         top_k: int = None,

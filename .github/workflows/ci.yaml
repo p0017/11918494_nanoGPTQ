@@ -1,0 +1,31 @@
+name: NanoGPTQ CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # 1. Set up Conda and create environment
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: nanoGPTQ
+        environment-file: environment.yml
+        python-version: 3.12
+        auto-activate-base: false
+
+    # 2. Run tests
+    - name: Run Tests
+      run: |
+        pytest tests/

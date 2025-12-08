@@ -1,15 +1,24 @@
 import os
+from beartype import beartype
 import numpy as np
 import torch
 import time
 import math
-from config import model_config, train_config
+from config import (
+    model_config,
+    train_config,
+    validate_model_config,
+    validate_train_config,
+)
 from model import GPT
 
+validate_model_config()
+validate_train_config()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def get_batch(split: str):
+@beartype
+def get_batch(split: str) -> tuple[torch.Tensor, torch.Tensor]:
     if split == "train":
         path = "./data/tinyshakespeare_train.bin"
     elif split == "val":
@@ -99,7 +108,8 @@ if __name__ == "__main__":
     model.to(device=device)
 
     @torch.no_grad()
-    def get_loss():
+    @beartype
+    def get_loss() -> dict[str, torch.Tensor]:
         out = {}
         model.eval()
         for split in ["train", "val"]:
@@ -114,6 +124,7 @@ if __name__ == "__main__":
         model.train()
         return out
 
+    @beartype
     def get_learning_rate(iteration: int) -> float:
         # First some warmup
         if iteration < train_config.warmup_iters:
