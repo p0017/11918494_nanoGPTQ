@@ -206,7 +206,7 @@ def gptq_quantization(model: nn.Module):
     """
 
     # Getting four batches for calibration
-    input = [get_batch("train")[0] for _ in range(4)]
+    input = [get_batch("train")[0] for _ in range(20)]
     input = torch.cat(input, dim=0).to(device)
     context_length = input.shape[1]
 

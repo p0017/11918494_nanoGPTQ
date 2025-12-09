@@ -85,8 +85,7 @@ if __name__ == "__main__":
         optimizer = model.configure_optimizers(
             train_config.weight_decay,
             train_config.learning_rate,
-            train_config.betas,
-            device_type=device,
+            train_config.betas
         )
 
     # Or we resume from the best previous checkpoint

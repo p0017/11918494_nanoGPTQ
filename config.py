@@ -23,15 +23,15 @@ class model_config:
 class train_config:
     """Configuration for training parameters."""
 
-    learning_rate: float = 3e-4  # Learning rate
+    learning_rate: float = 5e-4  # Learning rate
     min_learning_rate: float = 5e-5  # Minimum learning rate for cosine decay
     betas: tuple = (0.9, 0.95)  # AdamW optimizer betas
     weight_decay: float = 0.1  # Weight decay for AdamW optimizer
-    batch_size: int = 64  # Batch size
-    max_iters: int = 3000  # Total number of training iterations
-    warmup_iters: int = 150  # Number of warmup iterations
-    iters_per_eval: int = 15  # Number of iterations for evaluation
-    eval_interval: int = 500  # Interval for evaluation and checkpointing
+    batch_size: int = 128  # Batch size
+    max_iters: int = 1500  # Total number of training iterations
+    warmup_iters: int = 75  # Number of warmup iterations
+    iters_per_eval: int = 10  # Number of iterations for evaluation
+    eval_interval: int = 125  # Interval for evaluation and checkpointing
     train_from_scratch: bool = True  # Whether to train the model from scratch
     name: str = (
         "tinystories_6x192"  # Name of the experiment for logging and checkpoints
@@ -41,8 +41,8 @@ class train_config:
 class sample_config:
     """Configuration for sampling parameters."""
 
-    experiment_name = "tinyshakespeare_8x384_full_run_highreg_quantized_gptq"  # Name of the experiment to load the model from
-    start_prompt = "To be, or "  # Can be any string, e.g., "To be, or not to be"
+    experiment_name = "tinystories_6x192_quantized_gptq"  # Name of the experiment to load the model from
+    start_prompt = "Yesterday, "  # Can be any string, e.g., "To be, or not to be"
     max_new_tokens = 500  # How many characters to generate
     temperature = 0.8  # 1.0 = standard, < 1.0 = more conservative, > 1.0 = more random
     top_k = 200  # Retain only the top_k most likely tokens (clamp distribution)
@@ -51,7 +51,7 @@ class sample_config:
 class quantization_config:
     """Configuration for quantization parameters."""
 
-    experiment_name = "tinyshakespeare_8x384_full_run_highreg"  # Name of the experiment to load the model from
+    experiment_name = "tinystories_6x192"  # Name of the experiment to load the model from
     method: str = "gptq"  # Quantization method: 'naive' or 'gptq'
 
 
@@ -59,10 +59,10 @@ class evaluation_config:
     """Configuration for evaluation parameters."""
 
     baseline_experiment_name = (
-        "tinyshakespeare_8x384_full_run_highreg"  # Name of the baseline experiment
+        "tinystories_6x192"  # Name of the baseline experiment
     )
-    naive_quantized_experiment_name = "tinyshakespeare_8x384_full_run_highreg_quantized_naive"  # Name of the naive quantized experiment
-    gptq_quantized_experiment_name = "tinyshakespeare_8x384_full_run_highreg_quantized_gptq"  # Name of the GPTQ quantized experiment
+    naive_quantized_experiment_name = "tinystories_6x192_quantized_naive"  # Name of the naive quantized experiment
+    gptq_quantized_experiment_name = "tinystories_6x192_quantized_gptq"  # Name of the GPTQ quantized experiment
     eval_batches: int = 100  # Number of batches to use for evaluation
 
 
