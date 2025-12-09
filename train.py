@@ -19,6 +19,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 @beartype
 def get_batch(split: str) -> tuple[torch.Tensor, torch.Tensor]:
+    """Generates a batch of data for training or evaluation.
+
+    Args:
+        split (str): The data split to use ('train', 'val', or 'test').
+    Returns:
+        tuple[torch.Tensor, torch.Tensor]: A tuple containing input and target tensors.
+    """
+
     if split == "train":
         path = "./data/tinyshakespeare_train.bin"
     elif split == "val":
@@ -110,6 +118,12 @@ if __name__ == "__main__":
     @torch.no_grad()
     @beartype
     def get_loss() -> dict[str, torch.Tensor]:
+        """Calculates the average loss over the training and validation sets.
+
+        Returns:
+            dict[str, torch.Tensor]: A dictionary containing average losses for 'train' and 'val' splits.
+        """
+
         out = {}
         model.eval()
         for split in ["train", "val"]:
@@ -126,6 +140,14 @@ if __name__ == "__main__":
 
     @beartype
     def get_learning_rate(iteration: int) -> float:
+        """Calculates the learning rate based on the current iteration using a warmup and cosine decay schedule.
+
+        Args:
+            iteration (int): The current training iteration.
+        Returns:
+            float: The calculated learning rate.
+        """
+
         # First some warmup
         if iteration < train_config.warmup_iters:
             return (

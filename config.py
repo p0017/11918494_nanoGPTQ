@@ -57,7 +57,7 @@ class quantization_config:
 
 @beartype
 def validate_model_config():
-    """Check if model hyperparameters are physically possible."""
+    """Check if model hyperparameters are valid."""
     assert model_config.context_length > 0, "Context length must be positive"
     assert model_config.n_layers > 0, "Number of layers must be positive"
     assert (

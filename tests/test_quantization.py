@@ -4,7 +4,7 @@ from quantize import naive_quantization, QuantizedLinear
 
 
 def test_layer_replacement():
-    """Test that Linear layers are replaced with QuantizedLinear layers."""
+    """Test the replacement of Linear layers with QuantizedLinear layers."""
     # Creating a dummy model
     model = nn.Sequential(nn.Linear(10, 20), nn.ReLU(), nn.Linear(20, 5))
 
@@ -18,7 +18,7 @@ def test_layer_replacement():
 
 
 def test_quantized_linear_forward():
-    """Test forward pass of QuantizedLinear layer."""
+    """Test the forward pass of the QuantizedLinear layer."""
     original = nn.Linear(4, 2, bias=False)
     # Creating a dummy quantized weight and scale
     weight_matrix_int8 = torch.zeros_like(original.weight, dtype=torch.int8)

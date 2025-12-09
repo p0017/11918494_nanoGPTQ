@@ -11,9 +11,21 @@ validate_model_config()
 
 @beartype
 class LayerNorm(nn.Module):
-    """LayerNorm with optional bias. PyTorch's LayerNorm always has bias, this one gives the option to disable it."""
+    """LayerNorm with optional bias. PyTorch's LayerNorm always has bias, this one gives the option to disable it.
+
+    Attributes:
+        weight (nn.Parameter): Learnable weights.
+        bias (nn.Parameter | None): Learnable bias parameter, or None if bias is disabled.
+    """
 
     def __init__(self, ndim: int, bias: bool = False):
+        """Initialize LayerNorm.
+
+        Args:
+            ndim (int): Number of dimensions for normalization.
+            bias (bool): Whether to include a bias term.
+        """
+
         super().__init__()
         self.weight = nn.Parameter(torch.ones(ndim))
         if bias:
@@ -22,15 +34,33 @@ class LayerNorm(nn.Module):
             self.bias = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass for LayerNorm.
+
+        Args:
+            x (torch.Tensor): Input tensor to normalize.
+        Returns:
+            torch.Tensor: Normalized tensor.
+        """
+
         return F.layer_norm(x, self.weight.shape, self.weight, self.bias, 1e-5)
 
 
 @beartype
 class CausalSelfAttention(nn.Module):
     """Causal self-attention mechanism with optional flash attention support.
-    Attends only to previous tokens and itself (no peeking into the future)."""
+    Attends only to previous tokens and itself (no peeking into the future).
+
+    Attributes:
+        c_attention (nn.Linear): Linear layer for query, key, value projections.
+        c_projection (nn.Linear): Linear layer for output projection."""
 
     def __init__(self, config: object):
+        """Initialize CausalSelfAttention.
+
+        Args:
+            config (object): Configuration object with model hyperparameters.
+        """
+
         super().__init__()
         assert config.embedding_dimension % config.n_attention_heads == 0
         # one big linear layer for all three learning query, key, value matrices at once
@@ -67,6 +97,14 @@ class CausalSelfAttention(nn.Module):
             self.register_buffer("bias", causal_mask)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass for CausalSelfAttention.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, sequence_length, embedding_dimension).
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, sequence_length, embedding_dimension).
+        """
+
         batch_size, sequence_length, embedding_dimension = x.size()
 
         # Before, we initialized one big linear layer for query, key, value matrices
@@ -154,9 +192,23 @@ class CausalSelfAttention(nn.Module):
 
 @beartype
 class MLP(nn.Module):
-    """Feed-forward neural network (multi-layer perceptron, MLP) with GELU activation and dropout."""
+    """Feed-forward neural network (multi-layer perceptron, MLP) with GELU activation and dropout.
+
+    Attributes:
+        first_linear (nn.Linear): First linear layer expanding the embedding dimension.
+        gelu (nn.GELU): GELU activation function.
+        second_linear (nn.Linear): Second linear layer reducing the dimension back.
+        dropout (nn.Dropout): Dropout layer for regularization.
+    """
 
     def __init__(self, config: object):
+        """
+        Initialize MLP.
+
+        Args:
+            config (object): Configuration object with model hyperparameters.
+        """
+
         super().__init__()
         # First linear layer expands the embedding dimension to 4 times its size
         # To let model learn more complex representations
@@ -171,6 +223,14 @@ class MLP(nn.Module):
         self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass for MLP.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, sequence_length, embedding_dimension).
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, sequence_length, embedding_dimension).
+        """
+
         x = self.first_linear(x)
         x = self.gelu(x)
         x = self.second_linear(x)
@@ -179,9 +239,22 @@ class MLP(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    """A single Transformer block consisting of causal self-attention and MLP with residual connections and layer normalization."""
+    """A single Transformer block consisting of causal self-attention and MLP with residual connections and layer normalization.
+
+    Attributes:
+        first_layer_norm (LayerNorm): Layer normalization before attention.
+        attention (CausalSelfAttention): Causal self-attention mechanism.
+        second_layer_norm (LayerNorm): Layer normalization before MLP.
+        mlp (MLP): Feed-forward neural network (multi-layer perceptron).
+    """
 
     def __init__(self, config: object):
+        """Initialize TransformerBlock.
+
+        Args:
+            config (object): Configuration object with model hyperparameters.
+        """
+
         super().__init__()
         self.first_layer_norm = LayerNorm(config.embedding_dimension, bias=config.bias)
         self.attention = CausalSelfAttention(config)
@@ -189,6 +262,14 @@ class TransformerBlock(nn.Module):
         self.mlp = MLP(config)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass for TransformerBlock.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, sequence_length, embedding_dimension).
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, sequence_length, embedding_dimension).
+        """
+
         # Residual connections around attention and MLP
         x = x + self.attention(self.first_layer_norm(x))
         x = x + self.mlp(self.second_layer_norm(x))
@@ -196,9 +277,20 @@ class TransformerBlock(nn.Module):
 
 
 class GPT(nn.Module):
-    """GPT autoregressive language model consisting of token and positional embeddings, multiple Transformer blocks, and a linear mapping head."""
+    """GPT autoregressive language model consisting of token and positional embeddings, multiple Transformer blocks, and a linear mapping head.
+
+    Attributes:
+        transformer (nn.ModuleDict): Main transformer components including embeddings and blocks.
+        linear_mapping_head (nn.Linear): Linear layer mapping final embeddings to vocabulary logits.
+    """
 
     def __init__(self, model_config: object):
+        """Initialize GPT model.
+
+        Args:
+            model_config (object): Configuration object with model hyperparameters.
+        """
+
         super().__init__()
         self.config = model_config
         # Getting vocabulary size from the vocabulary string set in config
@@ -246,14 +338,26 @@ class GPT(nn.Module):
         print(f"Number of parameters: %.2fM" % (self.get_number_of_parameters() / 1e6,))
 
     def get_number_of_parameters(self, non_embedding: bool = True) -> int:
-        """Returns the total number of parameters in the model."""
+        """Returns the total number of parameters in the model.
+
+        Args:
+            non_embedding (bool): If True, exclude embedding parameters from the count.
+        Returns:
+            int: Total number of parameters.
+        """
+
         number_of_parameters = sum(p.numel() for p in self.parameters())
         if non_embedding:
             number_of_parameters -= self.transformer.token_embedding.weight.numel()
         return number_of_parameters
 
     def _initialize_weights(self, module: nn.Module):
-        """Initialize the weights of linear and embedding layers with a normal distribution."""
+        """Initialize the weights of linear and embedding layers with a normal distribution.
+
+        Args:
+            module (nn.Module): The module to initialize.
+        """
+
         if isinstance(module, nn.Linear):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
@@ -268,6 +372,15 @@ class GPT(nn.Module):
     def forward(
         self, input_token_indices: torch.Tensor, targets: torch.Tensor = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Forward pass for GPT model.
+
+        Args:
+            input_token_indices (torch.Tensor): Input tensor of shape (batch_size, sequence_length) containing token indices.
+            targets (torch.Tensor | None): Optional target tensor of shape (batch_size, sequence_length) for computing loss.
+        Returns:
+            tuple[torch.Tensor, torch.Tensor]: Logits tensor of shape (batch_size, sequence_length, vocabulary_size) and loss (if targets provided).
+        """
+
         device = input_token_indices.device
         batch_size, sequence_length = input_token_indices.size()
 
@@ -312,7 +425,12 @@ class GPT(nn.Module):
         return logits, loss
 
     def crop_context_length(self, context_length: int):
-        """Crop the model's context length to a new, smaller value."""
+        """Crop the model's context length to a new, smaller value.
+
+        Args:
+            context_length (int): The new context length to set.
+        """
+
         assert (
             context_length <= self.config.context_length
         ), "New context length must be less than or equal to the original context length."
@@ -329,6 +447,16 @@ class GPT(nn.Module):
     def configure_optimizers(
         self, weight_decay: float, learning_rate: float, betas: tuple
     ):
+        """Configure AdamW optimizer with separate weight decay for different parameter groups.
+
+        Args:
+            weight_decay (float): Weight decay for parameters that require it.
+            learning_rate (float): Learning rate for the optimizer.
+            betas (tuple): Betas for the AdamW optimizer.
+        Returns:
+            torch.optim.AdamW: Configured AdamW optimizer.
+        """
+
         parameter_dict = {pn: p for pn, p in self.named_parameters()}
         # Filtering out parameters that do not require grad
         parameter_dict = {pn: p for pn, p in parameter_dict.items() if p.requires_grad}
@@ -361,10 +489,13 @@ class GPT(nn.Module):
         """
         Autoregressively generate new tokens given a prompt.
 
-        input_token_indices: (batch_size, sequence_length) tensor of token indices as prompt
-        max_new_tokens: number of new tokens to generate
-        temperature: controls randomness of sampling
-        top_k: optionally restricts sampling to the top k most probable tokens
+        Args:
+            input_token_indices (torch.Tensor): Input tensor of shape (batch_size, sequence_length) containing token indices as prompt.
+            max_new_tokens (int): Number of new tokens to generate.
+            temperature (float): Sampling temperature, higher values increase randomness.
+            top_k (int | None): If specified, only consider the top_k most probable tokens for sampling.
+        Returns:
+            torch.Tensor: Tensor of shape (batch_size, sequence_length + max_new_tokens) containing the generated token indices.
         """
 
         for _ in range(max_new_tokens):

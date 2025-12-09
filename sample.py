@@ -13,7 +13,11 @@ validate_sample_config()
 @beartype
 def replace_with_dummy_quantized(module: nn.Module):
     """Before loading a quantized model, we need to replace all nn.Linear layers with
-    QuantizedLinear layers, such that the state_dict can be loaded correctly."""
+    QuantizedLinear layers, such that the state_dict can be loaded correctly.
+
+    Args:
+        module (nn.Module): The module to replace layers in.
+    """
 
     for name, child in module.named_children():
         # Iterate through child modules

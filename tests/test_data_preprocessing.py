@@ -4,7 +4,9 @@ from config import VOCABULARY
 
 
 def test_encode_decode_consistency():
-    """Test that encoding and then decoding returns the original string."""
+    """Test that encoding followed by decoding returns the original text,
+    and that the encoded output is a list of integers."""
+
     original_text = "Hello, World!"
     # Ensure all chars are in vocabulary for this test
     original_text = "".join([c for c in original_text if c in VOCABULARY])

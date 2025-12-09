@@ -10,7 +10,13 @@ from config import VOCABULARY
 def encode(text: str) -> list[int]:
     """Convert a string to a list of integers.
     Each character is mapped to a unique integer.
-    For example, "abc" -> [0, 1, 2]"""
+    For example, "abc" -> [0, 1, 2]
+
+    Args:
+        text (str): The input string to encode.
+    Returns:
+        list[int]: The encoded list of integers.
+    """
 
     string_to_integer = {char: i for i, char in enumerate(VOCABULARY)}
     return [string_to_integer[char] for char in text]
@@ -18,9 +24,16 @@ def encode(text: str) -> list[int]:
 
 @beartype
 def decode(encoded: list[int]) -> str:
-    '''Convert a list of integers to a string.
+    """Convert a list of integers to a string.
     Each integer is mapped to a unique character.
-    For example, [0, 1, 2] -> "abc"'''
+    For example, [0, 1, 2] -> "abc"
+
+    Args:
+        encoded (list[int]): The list of integers to decode.
+    Returns:
+        str: The decoded string.
+    """
+
     integer_to_string = {i: char for i, char in enumerate(VOCABULARY)}
     return "".join([integer_to_string[i] for i in encoded])
 

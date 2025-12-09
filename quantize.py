@@ -12,11 +12,26 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 @beartype
 class QuantizedLinear(torch.nn.Module):
-    """A linear layer with quantized weights, replaces nn.Linear in quantized models."""
+    """A linear layer with quantized weights, replaces nn.Linear in quantized models.
+    Dequantizes weights on-the-fly during the forward pass.
+
+    Attributes:
+        original_linear (nn.Linear): The original linear layer to be quantized.
+        weight_int8 (torch.Tensor): The quantized weights in int8 format.
+        scale (torch.Tensor): The scaling factors for dequantization.
+    """
 
     def __init__(
         self, original_linear: nn.Linear, weight_int8: torch.Tensor, scale: torch.Tensor
     ):
+        """Initializes the QuantizedLinear layer.
+
+        Args:
+            original_linear (nn.Linear): The original linear layer to be quantized.
+            weight_int8 (torch.Tensor): The quantized weights in int8 format.
+            scale (torch.Tensor): The scaling factors for dequantization.
+        """
+
         super().__init__()
         self.in_features = original_linear.in_features
         self.out_features = original_linear.out_features
@@ -31,7 +46,12 @@ class QuantizedLinear(torch.nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Dequantize weights on-the-fly for the forward pass."""
+        """Dequantize weights on-the-fly for the forward pass.
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_features).
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, out_features).
+        """
 
         w_dequantized = self.weight.to(x.dtype) * self.scale
         return torch.nn.functional.linear(x, w_dequantized, self.bias)
@@ -39,7 +59,13 @@ class QuantizedLinear(torch.nn.Module):
 
 @beartype
 def get_row_wise_scaling_factors(weight_matrix: torch.Tensor) -> torch.Tensor:
-    """Computes row-wise scaling factors of a weight matrix for symmetric quantization."""
+    """Computes row-wise scaling factors of a weight matrix for symmetric quantization.
+
+    Args:
+        weight_matrix (torch.Tensor): The weight matrix to compute scaling factors for.
+    Returns:
+        torch.Tensor: Row-wise scaling factors.
+    """
 
     return weight_matrix.abs().amax(dim=1, keepdim=True) / 127
 
@@ -47,8 +73,11 @@ def get_row_wise_scaling_factors(weight_matrix: torch.Tensor) -> torch.Tensor:
 @beartype
 def naive_quantization(module: nn.Module):
     """Recursively replaces all nn.Linear layers in the module with QuantizedLinear layers,
-    and sets their weights to quantized weights.
-    If the module has children, it moves down through them recursively."""
+    and sets their weights to quantized weights. If the module has children, it moves down through them recursively.
+
+    Args:
+        module (nn.Module): The module to quantize.
+    """
 
     for name, child_module in module.named_children():
         # Iterate through child modules
@@ -80,7 +109,13 @@ def gptq_math(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Performs the actual GPTQ algorithm on a single layer.
-    inputs: The input data X captured by the hook [batch*seq, in_features]
+
+    Args:
+        layer (nn.Linear): The linear layer to quantize.
+        inputs (torch.Tensor): The inputs to the layer used to compute the Hessian.
+    Returns:
+        tuple[torch.Tensor, torch.Tensor]: The quantized weights and scaling factors.
+
     """
     # W is the weight matrix of shape [out_features, in_features]
     # We quantize it column by column, so iterating over in_features
@@ -163,6 +198,9 @@ def gptq_math(
 def gptq_quantization(model: nn.Module):
     """
     Main loop for GPTQ. Iterates through blocks, quantizes them, and updates the data.
+
+    Args:
+        model (nn.Module): The model to quantize.
     """
 
     # Getting four batches for calibration

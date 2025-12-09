@@ -4,7 +4,7 @@ from model import GPT
 
 
 class dummy_model_config:
-    """A dummy donfiguration for testing the GPT model."""
+    """A dummy model config for testing the GPT model."""
 
     context_length: int = 256  # Length of the context window
     n_layers: int = 8  # Number of Transformer blocks
@@ -20,7 +20,7 @@ class dummy_model_config:
 
 
 def test_gpt_output_shape():
-    """Testing GPT model output shape and loss computation."""
+    """Testing the GPT model output shape and loss computation."""
     model = GPT(dummy_model_config)
     batch_size = 2
     # Creating a dummy input [batch, context_length]
