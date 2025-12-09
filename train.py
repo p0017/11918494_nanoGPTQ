@@ -28,11 +28,11 @@ def get_batch(split: str) -> tuple[torch.Tensor, torch.Tensor]:
     """
 
     if split == "train":
-        path = "./data/tinyshakespeare_train.bin"
+        path = "./data/tinystories_train.bin"
     elif split == "val":
-        path = "./data/tinyshakespeare_val.bin"
+        path = "./data/tinystories_val.bin"
     elif split == "test":
-        path = "./data/tinyshakespeare_test.bin"
+        path = "./data/tinystories_test.bin"
     else:
         raise ValueError("Invalid split name. Use 'train', 'val' or 'test'.")
 

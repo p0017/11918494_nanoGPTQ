@@ -39,14 +39,36 @@ def decode(encoded: list[int]) -> str:
 
 
 if __name__ == "__main__":
-    # Download the Tiny Shakespeare dataset if not already present
-    tinyshakespeare_path = "./data/tinyshakespeare.txt"
-    if not os.path.exists(tinyshakespeare_path):
-        tinyshakespeare_url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
-        with open(tinyshakespeare_path, "w") as f:
-            f.write(requests.get(tinyshakespeare_url).text)
+    # Download the TinyStories V2 dataset if not already present
+    tinystories_path = "./data/tinystories.txt"
+    target_chars = int(10 * 1e6)  # Targeting 10 million characters
 
-    with open(tinyshakespeare_path, "r") as f:
+    if not os.path.exists(tinystories_path):
+        print(f"Downloading TinyStories V2 (first {target_chars:,} characters)...")
+        tinystories_url = "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStoriesV2-GPT4-train.txt"
+
+        # Stream the download so we dont download the full 2GB file
+        response = requests.get(tinystories_url, stream=True)
+
+        collected_text = []
+        total_len = 0
+
+        # Iterate over chunks of data
+        for data_chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
+            if data_chunk:
+                text_chunk = data_chunk.decode("utf-8", errors="ignore")
+                collected_text.append(text_chunk)
+                total_len += len(text_chunk)
+
+                if total_len >= target_chars:
+                    break
+
+        full_text = "".join(collected_text)[:target_chars]
+
+        with open(tinystories_path, "w", encoding="utf-8") as f:
+            f.write(full_text)
+
+    with open(tinystories_path, "r", encoding="utf-8") as f:
         text = f.read()
 
     # Analyze the dataset
@@ -76,6 +98,6 @@ if __name__ == "__main__":
     train_data = np.array(train_data, dtype=np.uint16)
     val_data = np.array(val_data, dtype=np.uint16)
     test_data = np.array(test_data, dtype=np.uint16)
-    train_data.tofile("./data/tinyshakespeare_train.bin")
-    val_data.tofile("./data/tinyshakespeare_val.bin")
-    test_data.tofile("./data/tinyshakespeare_test.bin")
+    train_data.tofile("./data/tinystories_train.bin")
+    val_data.tofile("./data/tinystories_val.bin")
+    test_data.tofile("./data/tinystories_test.bin")

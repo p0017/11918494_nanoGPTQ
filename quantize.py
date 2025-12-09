@@ -80,6 +80,8 @@ def naive_quantization(module: nn.Module):
     """
 
     for name, child_module in module.named_children():
+        if name == "linear_mapping_head":
+            continue  # Skip the linear mapping head
         # Iterate through child modules
         if isinstance(child_module, nn.Linear):
             # Only quantize nn.Linear layers
@@ -129,7 +131,7 @@ def gptq_math(
     # Dampening for numerical stability
     # Adding a small value to the diagonal of H
     # Instead of just dampening with a constant, we base it on the magnitude of H
-    dampening_factor = 0.01 * torch.mean(torch.diag(H))
+    dampening_factor = 0.0001 * torch.mean(torch.diag(H))
     diagonal = torch.arange(cols, device=W.device)
     H[diagonal, diagonal] += dampening_factor
 
@@ -207,6 +209,9 @@ def gptq_quantization(model: nn.Module):
     input = [get_batch("train")[0] for _ in range(4)]
     input = torch.cat(input, dim=0).to(device)
     context_length = input.shape[1]
+
+    # Putting the model in eval mode since we dont want dropout here
+    model.eval()
 
     # Getting the initial embeddings for the initial forward pass
     with torch.no_grad():

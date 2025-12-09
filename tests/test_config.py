@@ -5,6 +5,7 @@ from config import (
     validate_train_config,
     validate_sample_config,
     validate_quantization_config,
+    validate_evaluation_config,
 )
 
 
@@ -14,3 +15,4 @@ def test_complete_config():
     validate_train_config()
     validate_sample_config()
     validate_quantization_config()
+    validate_evaluation_config()

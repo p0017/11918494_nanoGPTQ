@@ -20,6 +20,9 @@ def replace_with_dummy_quantized(module: nn.Module):
     """
 
     for name, child in module.named_children():
+        if name == "linear_mapping_head":
+            continue  # Skip the linear mapping head
+
         # Iterate through child modules
         if isinstance(child, nn.Linear):
             # Only quantize nn.Linear layers

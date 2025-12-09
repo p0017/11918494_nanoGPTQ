@@ -1,20 +1,20 @@
 from beartype import beartype
 import os
 
-VOCABULARY = "\n !$&',-.3:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+VOCABULARY = """\n !"'(),-./01234589:;<>?ABCDEFGHIJKLMNOPQRSTUVWXYZ`abcdefghijklmnopqrstuvwxyz|é–—‘’“”…"""
 
 
 class model_config:
     """Configuration for the GPT model."""
 
     context_length: int = 256  # Length of the context window
-    n_layers: int = 8  # Number of Transformer blocks
+    n_layers: int = 6  # Number of Transformer blocks
     n_attention_heads: int = 6  # Number of attention heads
     embedding_dimension: int = (
-        384  # Embedding dimension, must be divisible by n_attention_heads
+        192  # Embedding dimension, must be divisible by n_attention_heads
     )
     dropout: float = (
-        0.4  # Chose a slightly lower dropout for the small model and dataset
+        0.1  # Chose a slightly lower dropout for the small model and dataset
     )
     bias: bool = False  # Whether to use bias
     vocabulary: str = VOCABULARY  # Vocabulary string
@@ -26,15 +26,15 @@ class train_config:
     learning_rate: float = 3e-4  # Learning rate
     min_learning_rate: float = 5e-5  # Minimum learning rate for cosine decay
     betas: tuple = (0.9, 0.95)  # AdamW optimizer betas
-    weight_decay: float = 0.2  # Weight decay for AdamW optimizer
-    batch_size: int = 32  # Batch size
-    max_iters: int = 14000  # Total number of training iterations
-    warmup_iters: int = 500  # Number of warmup iterations
+    weight_decay: float = 0.1  # Weight decay for AdamW optimizer
+    batch_size: int = 64  # Batch size
+    max_iters: int = 3000  # Total number of training iterations
+    warmup_iters: int = 150  # Number of warmup iterations
     iters_per_eval: int = 15  # Number of iterations for evaluation
     eval_interval: int = 500  # Interval for evaluation and checkpointing
     train_from_scratch: bool = True  # Whether to train the model from scratch
     name: str = (
-        "tinyshakespeare_8x384_full_run_highreg"  # Name of the experiment for logging and checkpoints
+        "tinystories_6x192"  # Name of the experiment for logging and checkpoints
     )
 
 
@@ -53,6 +53,17 @@ class quantization_config:
 
     experiment_name = "tinyshakespeare_8x384_full_run_highreg"  # Name of the experiment to load the model from
     method: str = "gptq"  # Quantization method: 'naive' or 'gptq'
+
+
+class evaluation_config:
+    """Configuration for evaluation parameters."""
+
+    baseline_experiment_name = (
+        "tinyshakespeare_8x384_full_run_highreg"  # Name of the baseline experiment
+    )
+    naive_quantized_experiment_name = "tinyshakespeare_8x384_full_run_highreg_quantized_naive"  # Name of the naive quantized experiment
+    gptq_quantized_experiment_name = "tinyshakespeare_8x384_full_run_highreg_quantized_gptq"  # Name of the GPTQ quantized experiment
+    eval_batches: int = 100  # Number of batches to use for evaluation
 
 
 @beartype
@@ -119,3 +130,29 @@ def validate_quantization_config():
         "naive",
         "gptq",
     ], "Quantization method must be 'naive' or 'gptq'"
+
+
+@beartype
+def validate_evaluation_config():
+    """Check if evaluation parameters are valid."""
+    baseline_path = os.path.join(
+        "checkpoints", f"{evaluation_config.baseline_experiment_name}.pt"
+    )
+    naive_path = os.path.join(
+        "checkpoints",
+        f"{evaluation_config.naive_quantized_experiment_name}.pt",
+    )
+    gptq_path = os.path.join(
+        "checkpoints",
+        f"{evaluation_config.gptq_quantized_experiment_name}.pt",
+    )
+    assert os.path.isfile(
+        baseline_path
+    ), f"Baseline checkpoint file not found at {baseline_path}"
+    assert os.path.isfile(
+        naive_path
+    ), f"Naive quantized checkpoint file not found at {naive_path}"
+    assert os.path.isfile(
+        gptq_path
+    ), f"GPTQ quantized checkpoint file not found at {gptq_path}"
+    assert evaluation_config.eval_batches > 0, "Evaluation batches must be positive"
