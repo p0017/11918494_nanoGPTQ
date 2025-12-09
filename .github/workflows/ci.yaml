@@ -28,4 +28,4 @@ jobs:
     # 2. Run tests
     - name: Run Tests
       run: |
-        pytest tests/
+        python -m pytest tests/
