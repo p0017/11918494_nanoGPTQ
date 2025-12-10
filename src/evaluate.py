@@ -1,9 +1,9 @@
 import torch
 import os
-from config import evaluation_config, validate_evaluation_config
-from train import get_batch
-from model import GPT
-from sample import replace_with_dummy_quantized
+from src.config import evaluation_config, validate_evaluation_config
+from src.train import get_batch
+from src.model import GPT
+from src.sample import replace_with_dummy_quantized
 
 validate_evaluation_config()
 device = "cuda" if torch.cuda.is_available() else "cpu"

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from quantize import naive_quantization, QuantizedLinear
+from src.quantize import naive_quantization, QuantizedLinear
 
 
 def test_layer_replacement():

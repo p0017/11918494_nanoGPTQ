@@ -2,9 +2,9 @@ import os
 from beartype import beartype
 import torch
 from model import GPT
-from data_preprocessing import encode, decode
-from quantize import QuantizedLinear
-from config import sample_config, validate_sample_config
+from src.data_preprocessing import encode, decode
+from src.quantize import QuantizedLinear
+from src.config import sample_config, validate_sample_config
 import torch.nn as nn
 
 validate_sample_config()

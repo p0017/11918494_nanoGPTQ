@@ -1,11 +1,11 @@
 import os
 from beartype import beartype
 import torch
-from model import GPT
-from data_preprocessing import encode, decode
-from sample import replace_with_dummy_quantized
-from config import demo_config, validate_demo_config
 import gradio as gr
+from src.model import GPT
+from src.data_preprocessing import encode, decode
+from src.sample import replace_with_dummy_quantized
+from src.config import demo_config, validate_demo_config
 
 validate_demo_config()
 device = "cuda" if torch.cuda.is_available() else "cpu"

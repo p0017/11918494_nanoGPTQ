@@ -1,6 +1,6 @@
 import pytest
-from data_preprocessing import encode, decode
-from config import VOCABULARY
+from src.data_preprocessing import encode, decode
+from src.config import VOCABULARY
 
 
 def test_encode_decode_consistency():

@@ -1,6 +1,6 @@
 import torch
 import pytest
-from model import GPT
+from src.model import GPT
 
 
 class dummy_model_config:

@@ -2,9 +2,9 @@ import os
 from beartype import beartype
 import torch
 import torch.nn as nn
-from model import GPT
-from config import quantization_config, validate_quantization_config
-from train import get_batch
+from src.model import GPT
+from src.config import quantization_config, validate_quantization_config
+from src.train import get_batch
 
 validate_quantization_config()
 device = "cuda" if torch.cuda.is_available() else "cpu"

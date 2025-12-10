@@ -1,6 +1,6 @@
 import pytest
 import os
-from config import (
+from src.config import (
     validate_model_config,
     validate_train_config,
     validate_sample_config,

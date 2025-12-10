@@ -1,8 +1,8 @@
 import torch
 import pytest
 from unittest.mock import patch
-import train
-from model import GPT
+import src.train
+from src.model import GPT
 
 
 class dummy_model_config:
@@ -49,7 +49,7 @@ def test_training_loop_cpu():
     )
 
     # Ensuring get_learning_rate uses the dummy config, not the global one
-    with patch("train.train_config", train_config):
+    with patch("src.train.train_config", train_config):
 
         # Set model to training mode
         model.train()
