@@ -16,7 +16,7 @@ class dummy_model_config:
         0.4  # Chose a slightly lower dropout for the small model and dataset
     )
     bias: bool = False  # Whether to use bias
-    vocabulary: str = "ABC"  # Vocabulary string
+    vocabulary: str = "ABCabc"  # Vocabulary string
 
 
 def test_gpt_output_shape():

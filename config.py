@@ -51,19 +51,38 @@ class sample_config:
 class quantization_config:
     """Configuration for quantization parameters."""
 
-    experiment_name = "tinystories_6x192"  # Name of the experiment to load the model from
+    experiment_name = (
+        "tinystories_6x192"  # Name of the experiment to load the model from
+    )
     method: str = "gptq"  # Quantization method: 'naive' or 'gptq'
 
 
 class evaluation_config:
     """Configuration for evaluation parameters."""
 
-    baseline_experiment_name = (
-        "tinystories_6x192"  # Name of the baseline experiment
+    baseline_experiment_name = "tinystories_6x192"  # Name of the baseline experiment
+    naive_quantized_experiment_name = (
+        "tinystories_6x192_quantized_naive"  # Name of the naive quantized experiment
     )
-    naive_quantized_experiment_name = "tinystories_6x192_quantized_naive"  # Name of the naive quantized experiment
-    gptq_quantized_experiment_name = "tinystories_6x192_quantized_gptq"  # Name of the GPTQ quantized experiment
+    gptq_quantized_experiment_name = (
+        "tinystories_6x192_quantized_gptq"  # Name of the GPTQ quantized experiment
+    )
     eval_batches: int = 100  # Number of batches to use for evaluation
+
+
+class demo_config:
+    """Configuration for demo parameters."""
+
+    baseline_experiment_name = "tinystories_6x192"  # Name of the baseline experiment
+    naive_quantized_experiment_name = (
+        "tinystories_6x192_quantized_naive"  # Name of the naive quantized experiment
+    )
+    gptq_quantized_experiment_name = (
+        "tinystories_6x192_quantized_gptq"  # Name of the GPTQ quantized experiment
+    )
+    max_new_tokens = 200  # How many characters to generate
+    temperature = 0.8  # 1.0 = standard, < 1.0 = more conservative, > 1.0 = more random
+    top_k = 200  # Retain only the top_k most likely tokens (clamp distribution)
 
 
 @beartype
@@ -156,3 +175,29 @@ def validate_evaluation_config():
         gptq_path
     ), f"GPTQ quantized checkpoint file not found at {gptq_path}"
     assert evaluation_config.eval_batches > 0, "Evaluation batches must be positive"
+
+
+@beartype
+def validate_demo_config():
+    """Check if demo parameters are valid."""
+    baseline_path = os.path.join(
+        "checkpoints", f"{demo_config.baseline_experiment_name}.pt"
+    )
+    naive_path = os.path.join(
+        "checkpoints", f"{demo_config.naive_quantized_experiment_name}.pt"
+    )
+    gptq_path = os.path.join(
+        "checkpoints", f"{demo_config.gptq_quantized_experiment_name}.pt"
+    )
+    assert os.path.isfile(
+        baseline_path
+    ), f"Baseline checkpoint file not found at {baseline_path}"
+    assert os.path.isfile(
+        naive_path
+    ), f"Naive quantized checkpoint file not found at {naive_path}"
+    assert os.path.isfile(
+        gptq_path
+    ), f"GPTQ quantized checkpoint file not found at {gptq_path}"
+    assert demo_config.max_new_tokens > 0, "Max new tokens must be positive"
+    assert demo_config.temperature > 0, "Temperature must be positive"
+    assert demo_config.top_k > 0, "Top-k must be positive"
