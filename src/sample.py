@@ -1,7 +1,7 @@
 import os
 from beartype import beartype
 import torch
-from model import GPT
+from src.model import GPT
 from src.data_preprocessing import encode, decode
 from src.quantize import QuantizedLinear
 from src.config import sample_config, validate_sample_config
