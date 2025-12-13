@@ -2,7 +2,7 @@
 
 This repo contains a project for the lecture 194.077 Applied Deep Learning.
 
-**Topic:** Post‑training integer weight quantization of a small autoregressive transformer.
+**Topic:** Post‑training int8 weight quantization of a small autoregressive transformer.
 
 **Type:** Bring‑your‑own‑method.
 
@@ -142,3 +142,16 @@ Both quantized model variants will be compared to the floating‑point baseline 
 └── tests/                                   # Unit tests
 
 ```
+
+## Results
+
+The baseline model is able to predict full and correct words, often generating even half-sentences that are accurate, and it uses punctuation marks appropriately. In contrast, the naively quantized model frequently predicts incorrect or nonexistent words and misuses symbols, while the GPTQ version eliminates these errors and produces outputs similar to the baseline. This qualitative difference is also reflected in the perplexity results. Model sizes are reduced by 90% through quantization.
+
+| Model Variant   | Perplexity | Model Size |
+|-----------------|:----------:|:----------:|
+| **Baseline**    | 2.7769     | 31.9 MB    |
+| **Naive**       | 2.7696     | 2.9 MB     |
+| **GPTQ**        | 2.7771     | 2.9 MB     |
+
+
+
