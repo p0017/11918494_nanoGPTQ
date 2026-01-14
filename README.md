@@ -69,7 +69,7 @@ All demo parameters can be set in `./src/config.py`
 
 ## Approach
 
-I re-implemented a small ~2-3 M parameter autoregressive transformer based on NanoGPT, trained it once on a 10 MB subset of the TinyStories V2 text dataset, and implemented two post‑training integer (int8) weight quantization techniques.
+I re-implemented a small 2.8 M parameter autoregressive transformer based on NanoGPT, trained it once on a 10 MB subset of the TinyStories V2 text dataset, and implemented two post‑training integer (int8) weight quantization techniques.
 
 1. **Naive rounding quantization:** Rounds each weight to the nearest representable int8 value.
 2. **Hessian‑aware quantization (GPTQ-like):** Iteratively rounds weights one by one and adjusts all remaining weights using a Hessian approximation computed on a small calibration set.
